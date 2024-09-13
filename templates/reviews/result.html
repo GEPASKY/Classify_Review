@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Результат классификации</title>
+</head>
+<body>
+    <h1>Результат классификации</h1>
+    <p><strong>Ваш отзыв:</strong> {{ review_text }}</p>
+    <p><strong>Рейтинг:</strong> {{ rating }}</p>
+    <p><strong>Статус отзыва:</strong> {{ status }}</p>
+
+    <a href="{% url 'classify_review' %}">Вернуться</a>
+</body>
+</html>
