@@ -5,43 +5,58 @@ import joblib
 import os
 from django.conf import settings
 
-#from ..movie_reviews import settings
-
 # Загрузка обученной модели и TF-IDF векторайзера
 model = joblib.load('sentiment_model.pkl')  # Укажите путь к вашему файлу модели
 vectorizer = joblib.load('tfidf_vectorizer.pkl')  # Укажите путь к вашему TF-IDF векторайзеру
 
 
 def classify_review(request):
-    template_path = os.path.join(settings.BASE_DIR, 'reviews/templates/reviews/classify.html')
-    print("Template path:", template_path)
-
     if request.method == 'POST':
         form = ReviewForm(request.POST)
         if form.is_valid():
-            # Получаем текст отзыва из формы
+            # Get the review text
             review = form.cleaned_data['review']
 
-            # Преобразуем отзыв с помощью TF-IDF векторайзера
+            # Transform the review text using the TF-IDF vectorizer
             review_tfidf = vectorizer.transform([review])
 
-            # Прогнозируем с помощью загруженной модели
-            prediction = model.predict(review_tfidf)[0]
+            # Get the prediction probability
+            proba = model.predict_proba(review_tfidf)[0]  # Returns [probability_negative, probability_positive]
 
-            # Присваиваем рейтинг (например, от 1 до 10) в зависимости от оценки
-            if prediction == 1:
-                rating = 8  # Пример рейтинга для положительного отзыва
+            # Get the rating based on the probability score
+            probability_positive = proba[1]
+
+            if probability_positive >= 0.95:  # Strong positive sentiment
+                rating = 10
                 sentiment = 'Positive'
-            else:
-                rating = 3  # Пример рейтинга для отрицательного отзыва
+            elif probability_positive >= 0.75:  # Strong positive sentiment
+                rating = 9
+                sentiment = 'Positive'
+            elif probability_positive >= 0.55:  # Mild positive sentiment
+                rating = 7
+                sentiment = 'Positive'
+            elif probability_positive >= 0.45:  # Neutral sentiment
+                rating = 5
+                sentiment = 'Neutral'
+            elif probability_positive >= 0.25:  # Mild negative sentiment
+                rating = 4
+                sentiment = 'Negative'
+            elif probability_positive >= 0.15:  # Mild negative sentiment
+                rating = 3
+                sentiment = 'Negative'
+            elif probability_positive >= 0.05:  # Mild negative sentiment
+                rating = 2
+                sentiment = 'Negative'
+            else:  # Strong negative sentiment
+                rating = 1
                 sentiment = 'Negative'
 
-            # Возвращаем результат в шаблон
+            # Return result to template
             return render(request, 'reviews/classify.html', {
                 'form': form,
-                'prediction': prediction,
                 'rating': rating,
                 'sentiment': sentiment,
+                'prediction': True,
             })
     else:
         form = ReviewForm()
